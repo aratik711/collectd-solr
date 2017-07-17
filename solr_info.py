@@ -45,7 +45,17 @@ if result:
     cores = result['status'].keys()
 
 SOLR_URL = "http://%s:%i/solr" % (HOST, PORT)
-SOLR_HANDLERS = {"query": "/select", "suggest": "/suggest", "simillar": "/mlt"}
+SOLR_HANDLERS = {"searchHandler": "org.apache.solr.handler.component.SearchHandler", "mbeans": "/admin/mbeans", 
+		"org.apache.solr.handler.DumpRequestHandler": "org.apache.solr.handler.DumpRequestHandler","solr_query": "solr_query",
+		"/admin/file": "/admin/file", "/admin/logging": "/admin/logging","/admin/plugins": "/admin/plugins","/admin/luke": "/admin/luke",
+		"/update": "/update","/admin/system": "/admin/system","/debug/dump": "/debug/dump","/admin/threads": "/admin/threads",
+		"com.datastax.bdp.search.solr.handler.component.CqlSearchHandler": "com.datastax.bdp.search.solr.handler.component.CqlSearchHandler",
+		"org.apache.solr.handler.admin.InfoHandler": "org.apache.solr.handler.admin.InfoHandler",
+		"org.apache.solr.handler.UpdateRequestHandler": "org.apache.solr.handler.UpdateRequestHandler",
+		"org.apache.solr.handler.PingRequestHandler": "org.apache.solr.handler.PingRequestHandler",
+		"/admin/properties": "/admin/properties","search": "search","/update/json/docs": "/update/json/docs",
+		"com.datastax.bdp.search.solr.handler.admin.CassandraCoreAdminHandler": "com.datastax.bdp.search.solr.handler.admin.CassandraCoreAdminHandler",
+		"/admin/ping": "/admin/ping", "org.apache.solr.handler.component.SearchHandler": "org.apache.solr.handler.component.SearchHandler"}
 
 def dispatch_value(value, value_name, value_type, type_instance=None, core=""):
     plugin = "%s_solr_info" % (core)   
@@ -61,7 +71,6 @@ def dispatch_value(value, value_name, value_type, type_instance=None, core=""):
     val.dispatch()
 
 def fetch_metrics():
-    global SOLR_URL
     stats_url = "solr/admin/metrics?wt=json" 
     
     solr_data = get_response(stats_url)
@@ -84,10 +93,9 @@ def fetch_metrics():
     return data
 
 def fetch_core_data(core):
-    global SOLR_URL, SOLR_HANDLERS
-    stats_url = "%s/%s/admin/mbeans?stats=true&wt=json" % (SOLR_URL, core)
-    stats = urllib2.urlopen(stats_url)
-    solr_data = json.load(stats)
+    global SOLR_HANDLERS
+    stats_url = "solr/%s/admin/mbeans?stats=true&wt=json" % (core)
+    solr_data = get_response(stats_url)
 
     # Searcher information
     solr_data = solr_data["solr-mbeans"]
@@ -98,10 +106,6 @@ def fetch_core_data(core):
     
     data = { "docs": {}, "cache": {}, "handler_stats": {}, "update_stats": {} }
     for module, module_data in solr_data:
-        #log_verbose("********")
-        #log_verbose(module)
-	#log_verbose("#######")
-        #log_verbose(module_data)
         if module == "CORE":
             data["docs"]["num_docs"] = module_data["searcher"]["stats"]["numDocs"]
 	    data["docs"]["max_doc"] = module_data["searcher"]["stats"]["maxDoc"]
